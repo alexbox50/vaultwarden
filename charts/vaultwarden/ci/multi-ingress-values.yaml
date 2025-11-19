@@ -1,7 +1,7 @@
 # Example values file demonstrating multiple ingress configuration
 # This example shows how to configure two ingresses:
 # - One for private access (no TLS, no mTLS)
-# - One for public access (with TLS and mTLS)
+# - One for public access (with TLS, mTLS, and automatic Let's Encrypt certificates)
 
 multiIngress:
   - name: private
@@ -17,6 +17,8 @@ multiIngress:
     pathType: "Prefix"
     tlsSecret: ""
     nginxAllowList: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    certManager:
+      enabled: false
   
   - name: public
     enabled: true
@@ -34,4 +36,7 @@ multiIngress:
     hostname: "vault-public.example.com"
     path: "/"
     pathType: "Prefix"
-    tlsSecret: "vault-public-tls"
+    # tlsSecret not needed when using cert-manager
+    certManager:
+      enabled: true
+      clusterIssuer: "letsencrypt-prod"

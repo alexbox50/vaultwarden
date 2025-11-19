@@ -810,10 +810,15 @@ ingress:
   ## Ref: https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#custom-headers
   ##
   customHeadersConfigMap: {}
-  ## TODO:
-  ##   - Add support for using cert-manager.
-  ##   - Support for multiple TLS hostnames.
+  ## @param ingress.certManager cert-manager integration for automatic certificate provisioning
   ##
+  certManager:
+    ## @param ingress.certManager.enabled Enable cert-manager integration
+    enabled: false
+    ## @param ingress.certManager.clusterIssuer Name of the ClusterIssuer to use (e.g., "letsencrypt-prod")
+    clusterIssuer: ""
+    ## @param ingress.certManager.issuer Name of the Issuer to use (namespace-scoped)
+    issuer: ""
 
 ## @section Multiple Ingresses Configuration
 ## @param multiIngress Multiple ingress configurations
@@ -833,6 +838,8 @@ ingress:
 ##     pathType: "Prefix"
 ##     tlsSecret: ""
 ##     nginxAllowList: "10.0.0.0/8"
+##     certManager:
+##       enabled: false
 ##   - name: public
 ##     enabled: true
 ##     class: "nginx-public"
@@ -846,5 +853,8 @@ ingress:
 ##     path: "/"
 ##     pathType: "Prefix"
 ##     tlsSecret: "vault-public-tls"
+##     certManager:
+##       enabled: true
+##       clusterIssuer: "letsencrypt-prod"
 ##
 multiIngress: []

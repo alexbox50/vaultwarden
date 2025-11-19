@@ -39,6 +39,14 @@ metadata:
     {{- if $ingress.additionalAnnotations }}
     {{- toYaml $ingress.additionalAnnotations | nindent 4 }}
     {{- end }}
+    {{- if and $ingress.certManager $ingress.certManager.enabled }}
+    {{- if $ingress.certManager.clusterIssuer }}
+    cert-manager.io/cluster-issuer: {{ $ingress.certManager.clusterIssuer | quote }}
+    {{- else if $ingress.certManager.issuer }}
+    cert-manager.io/issuer: {{ $ingress.certManager.issuer | quote }}
+    {{- end }}
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    {{- end }}
     {{- if $ingress.nginxIngressAnnotations }}
     {{- if $ingress.customHeadersConfigMap }}
     nginx.ingress.kubernetes.io/custom-headers: {{ $.Release.Namespace }}/custom-headers-configmap
@@ -69,7 +77,15 @@ spec:
         {{- range $ingress.additionalHostnames }}
         - {{ . | quote }}
         {{- end }}
+      {{- if and $ingress.certManager $ingress.certManager.enabled }}
+      {{- if $ingress.name }}
+      secretName: {{ $fullname }}-{{ $ingress.name }}-tls
+      {{- else }}
+      secretName: {{ $fullname }}-tls
+      {{- end }}
+      {{- else }}
       secretName: {{ $ingress.tlsSecret }}
+      {{- end }}
   {{- end }}
   rules:
     {{- range $ingress.additionalHostnames }}

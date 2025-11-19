@@ -1,0 +1,54 @@
+{{- $fullname := include "vaultwarden.fullname" . -}}
+{{- $ingressList := list -}}
+
+{{- /* Build ingress list: use multiIngress if defined, otherwise use legacy single ingress */ -}}
+{{- if .Values.multiIngress -}}
+  {{- range .Values.multiIngress -}}
+    {{- if .enabled -}}
+      {{- $ingressList = append $ingressList . -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if .Values.ingress.enabled -}}
+  {{- $ingressList = append $ingressList .Values.ingress -}}
+{{- end -}}
+
+{{- /* Create Certificate resources for ingresses with cert-manager enabled */ -}}
+{{- range $idx, $ingress := $ingressList }}
+{{- if and $ingress.tls $ingress.certManager $ingress.certManager.enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  {{- if $ingress.name }}
+  name: {{ $fullname }}-{{ $ingress.name }}-cert
+  {{- else }}
+  name: {{ $fullname }}-cert
+  {{- end }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: vaultwarden
+    {{- include "vaultwarden.labels" $ | nindent 4 }}
+spec:
+  {{- if $ingress.name }}
+  secretName: {{ $fullname }}-{{ $ingress.name }}-tls
+  {{- else }}
+  secretName: {{ $fullname }}-tls
+  {{- end }}
+  dnsNames:
+    - {{ $ingress.hostname | quote }}
+    {{- range $ingress.additionalHostnames }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- if $ingress.certManager.clusterIssuer }}
+  issuerRef:
+    name: {{ $ingress.certManager.clusterIssuer }}
+    kind: ClusterIssuer
+    group: cert-manager.io
+  {{- else if $ingress.certManager.issuer }}
+  issuerRef:
+    name: {{ $ingress.certManager.issuer }}
+    kind: Issuer
+    group: cert-manager.io
+  {{- end }}
+{{- end }}
+{{- end }}
