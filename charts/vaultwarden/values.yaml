@@ -814,3 +814,37 @@ ingress:
   ##   - Add support for using cert-manager.
   ##   - Support for multiple TLS hostnames.
   ##
+
+## @section Multiple Ingresses Configuration
+## @param multiIngress Multiple ingress configurations
+## Configure multiple ingresses with different settings (e.g., one for private access, one for public with mTLS)
+## When multiIngress is defined, it takes precedence over the single ingress configuration above
+## Example:
+## multiIngress:
+##   - name: private
+##     enabled: true
+##     class: "nginx-private"
+##     nginxIngressAnnotations: true
+##     additionalAnnotations: {}
+##     labels: {}
+##     tls: false
+##     hostname: "vault-private.contoso.com"
+##     path: "/"
+##     pathType: "Prefix"
+##     tlsSecret: ""
+##     nginxAllowList: "10.0.0.0/8"
+##   - name: public
+##     enabled: true
+##     class: "nginx-public"
+##     nginxIngressAnnotations: true
+##     additionalAnnotations:
+##       nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+##       nginx.ingress.kubernetes.io/auth-tls-secret: "default/ca-secret"
+##     labels: {}
+##     tls: true
+##     hostname: "vault-public.contoso.com"
+##     path: "/"
+##     pathType: "Prefix"
+##     tlsSecret: "vault-public-tls"
+##
+multiIngress: []

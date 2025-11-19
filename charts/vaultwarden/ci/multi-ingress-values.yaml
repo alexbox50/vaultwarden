@@ -1,0 +1,37 @@
+# Example values file demonstrating multiple ingress configuration
+# This example shows how to configure two ingresses:
+# - One for private access (no TLS, no mTLS)
+# - One for public access (with TLS and mTLS)
+
+multiIngress:
+  - name: private
+    enabled: true
+    class: "nginx-private"
+    nginxIngressAnnotations: true
+    additionalAnnotations: {}
+    labels:
+      environment: private
+    tls: false
+    hostname: "vault-private.example.com"
+    path: "/"
+    pathType: "Prefix"
+    tlsSecret: ""
+    nginxAllowList: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+  
+  - name: public
+    enabled: true
+    class: "nginx-public"
+    nginxIngressAnnotations: true
+    additionalAnnotations:
+      # Enable mTLS for this ingress
+      nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+      nginx.ingress.kubernetes.io/auth-tls-secret: "default/ca-secret"
+      nginx.ingress.kubernetes.io/auth-tls-verify-depth: "1"
+      nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    labels:
+      environment: public
+    tls: true
+    hostname: "vault-public.example.com"
+    path: "/"
+    pathType: "Prefix"
+    tlsSecret: "vault-public-tls"

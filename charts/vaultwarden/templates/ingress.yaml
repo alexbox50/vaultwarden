@@ -1,7 +1,21 @@
-{{- $ingress := .Values.ingress -}}
-{{- $fullname := .Release.fullname -}}
-{{- if $ingress.enabled }}
-{{- $newAPIversion := .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+{{- $newAPIversion := .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
+{{- $fullname := include "vaultwarden.fullname" . -}}
+{{- $ingressList := list -}}
+
+{{- /* Build ingress list: use multiIngress if defined, otherwise use legacy single ingress */ -}}
+{{- if .Values.multiIngress -}}
+  {{- range .Values.multiIngress -}}
+    {{- if .enabled -}}
+      {{- $ingressList = append $ingressList . -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if .Values.ingress.enabled -}}
+  {{- $ingressList = append $ingressList .Values.ingress -}}
+{{- end -}}
+
+{{- /* Iterate over all enabled ingresses */ -}}
+{{- range $idx, $ingress := $ingressList }}
+---
 {{- if $newAPIversion }}
 apiVersion: networking.k8s.io/v1
 {{- else }}
@@ -9,11 +23,15 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ include "vaultwarden.fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  {{- if $ingress.name }}
+  name: {{ $fullname }}-{{ $ingress.name }}
+  {{- else }}
+  name: {{ $fullname }}
+  {{- end }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     app.kubernetes.io/component: vaultwarden
-    {{- include "vaultwarden.labels" . | nindent 4 }}
+    {{- include "vaultwarden.labels" $ | nindent 4 }}
     {{- range $key, $value := $ingress.labels }}
     {{- printf "%s: %s" $key (tpl $value $ | quote) | nindent 4 }}
     {{- end }}
@@ -23,7 +41,7 @@ metadata:
     {{- end }}
     {{- if $ingress.nginxIngressAnnotations }}
     {{- if $ingress.customHeadersConfigMap }}
-    nginx.ingress.kubernetes.io/custom-headers: {{ .Release.Namespace }}/custom-headers-configmap
+    nginx.ingress.kubernetes.io/custom-headers: {{ $.Release.Namespace }}/custom-headers-configmap
     {{- end }}
     nginx.ingress.kubernetes.io/enable-cors: "true"
     {{- if $ingress.tls }}
@@ -62,7 +80,7 @@ spec:
           pathType: {{ $ingress.pathType }}
           backend:
             service:
-              name: {{ include "vaultwarden.fullname" $ }}
+              name: {{ $fullname }}
               port:
                 name: "http"
     {{- end }}
@@ -73,7 +91,8 @@ spec:
           pathType: {{ $ingress.pathType }}
           backend:
             service:
-              name: {{ include "vaultwarden.fullname" . }}
+              name: {{ $fullname }}
               port:
                 name: "http"
 {{- end }}
+
